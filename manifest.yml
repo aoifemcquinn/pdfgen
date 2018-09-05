@@ -1,0 +1,4 @@
+---
+applications:
+- name: pdfgenerator
+  command: node index.js
