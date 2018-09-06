@@ -34,6 +34,9 @@ var getCookieJSON = function(cookieString) {
 
 app.get('/pdfgenerator/submit/:url', function (req, res) {
 
+    console.log('submit accessed');
+    console.dir(req);
+
     var cookies = getCookieJSON(req.headers.cookie);
     var url = req.params.url;
 
@@ -42,6 +45,8 @@ app.get('/pdfgenerator/submit/:url', function (req, res) {
 });
 
 var urlToPdf = function(url, cookies) {
+
+    console.log('url to pdf accessed');
 
     var pdfName = Math.random().toString().replace('0.', '') + '.pdf';
 
