@@ -1,10 +1,13 @@
 const express = require('express');
+
+const https = require('https');
+const fs = require('fs');
 const cors = require('cors');
 const app = express();
 const puppeteer = require('puppeteer');
 
 // Production port
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 8041;
 
 app.use(cors());
 app.use(express.static('public'));
@@ -15,36 +18,16 @@ app.use(function(req, res, next) {
     next();
 });
 
-var getCookieJSON = function(cookieString) {
-
-    var cookieArray = cookieString.split('; ');
-    var cookies = [];
-
-    for (var i = 0; i < cookieArray.length; i++) {
-        var cookie = {};
-        var cookieElement = cookieArray[i].split('=');
-        cookie.name = cookieElement[0];
-        cookie.value = cookieElement[1];
-        cookie.domain = "localhost";
-        cookies.push(cookie);
-    }
-
-    return cookies;
-};
-
 app.get('/pdfgenerator/submit/:url', function (req, res) {
+   console.log("Accessed");
 
-    console.log('submit accessed');
-    console.dir(req);
-
-    var cookies = getCookieJSON(req.headers.cookie);
     var url = req.params.url;
 
-    var uniquePdfID = urlToPdf(url, cookies);
+    var uniquePdfID = urlToPdf(url);
     res.send(uniquePdfID);
 });
 
-var urlToPdf = function(url, cookies) {
+var urlToPdf = function(url) {
 
     console.log('url to pdf accessed');
 
@@ -53,10 +36,9 @@ var urlToPdf = function(url, cookies) {
     (async () => {
     const browser = await puppeteer.launch();
     const page = await browser.newPage();
-    for(var i=0; i<cookies.length; i++) {
-        var cookie = cookies[i];
-        await page.setCookie(cookie);
-    }
+
+    await page.setExtraHTTPHeaders({'uacp_internal_app':'pdfgenerator'});
+
     await page.goto(url, {waitUntil: 'networkidle2'});
 
     await page.pdf({
@@ -78,6 +60,11 @@ var urlToPdf = function(url, cookies) {
     return pdfName;
 };
 
-var server = app.listen(port, function () {
-	console.log('Server is running on port '+ port);
-});
+var options = {
+    key: fs.readFileSync('pdf.key'),
+    cert: fs.readFileSync('pdf.crt')
+};
+
+var server = https.createServer(options, app);
+console.log('Listen to port' + port);
+server.listen(port);
